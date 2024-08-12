@@ -1,6 +1,11 @@
 import pygame
 from random import choice
-from src.config import TILE, COLS, ROWS, RES
+from src.config import cfg
+
+TILE = cfg.TILE
+ROWS = cfg.ROWS
+COLS = cfg.COLS
+
 
 
 class Cell:
