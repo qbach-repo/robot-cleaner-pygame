@@ -37,8 +37,8 @@ class Game:
                 self.robot.draw_robot(screen=self.screen)
                 # if not self.robot.rotating_left and not self.robot.rotating_right:
                 #     self.robot.toggle_rotation()
-                if not self.robot.hitting_wall and not self.robot.reverse:
-                    self.robot.move_forward()
+                if not self.robot.is_busy:
+                    self.robot.move()
 
             pygame.display.flip()
 

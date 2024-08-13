@@ -11,8 +11,16 @@ COLS = cfg.COLS
 class Cell:
     def __init__(self, x, y):
         self.x, self.y = x, y
+        self.center_x = (x * TILE) + (TILE // 2)
+        self.center_y = (y * TILE) + (TILE // 2)
         self.walls = {'top': True, 'right': True, 'bottom': True, 'left': True}
         self.visited = False
+        self.neighbors = {
+            'top' : None,
+            'bottom' : None,
+            'left' : None,
+            'right': None
+        }
     
     def draw_current_cell(self,sc):
         x, y = self.x * TILE, self.y * TILE
@@ -60,6 +68,20 @@ class Cell:
         if left and not left.visited:
             neighbors.append(left)
         return choice(neighbors) if neighbors else False   
+
+    def get_neighbors(self,grid_cells):
+        top = self.check_cell(self.x, self.y - 1,grid_cells)
+        right = self.check_cell(self.x + 1, self.y,grid_cells)
+        bottom = self.check_cell(self.x, self.y + 1,grid_cells)
+        left = self.check_cell(self.x - 1, self.y,grid_cells)
+        if top:
+            self.neighbors['top'] = top
+        if right:
+            self.neighbors['right'] = right
+        if bottom:
+            self.neighbors['bottom'] = bottom
+        if left:
+            self.neighbors['left'] = left
     
     @classmethod
     def remove_walls(cls, current, next):
@@ -82,6 +104,8 @@ class Grid:
 
     def __init__(self) -> None:
         self.grid_cells = [Cell(col, row) for row in range(ROWS) for col in range(COLS)]
+        for cell in self.grid_cells:
+            cell.get_neighbors(grid_cells=self.grid_cells)
         self.current_cell = self.grid_cells[0]
         self.stack = []
         self.colors = []
