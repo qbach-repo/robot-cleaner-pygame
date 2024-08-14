@@ -42,7 +42,7 @@ class Robot:
     def draw_robot(self, screen) -> None:
 
         if self.moving_forward:
-            print(f"({self.center_x},{self.center_y}) --> ({self.target_cell.center_x}, {self.target_cell.center_y})")
+            # print(f"({self.center_x},{self.center_y}) --> ({self.target_cell.center_x}, {self.target_cell.center_y})")
             if self.facing == Orientation.UP:
                 self.center_y -= 1
                 self.line_end_y -= 1
@@ -59,6 +59,7 @@ class Robot:
                 self.moving_forward = False
                 self.visited.add(self.occupied_cell)
                 self.occupied_cell = self.target_cell
+                self.occupied_cell.cleanable = False
 
         if self.hitting_wall:
             if self.facing == Orientation.UP:
@@ -117,11 +118,11 @@ class Robot:
                 if self.facing == Orientation.UP:
                     self.facing = Orientation.LEFT
                 elif self.facing == Orientation.DOWN:
-                    self.facing == Orientation.RIGHT
+                    self.facing = Orientation.RIGHT
                 elif self.facing == Orientation.LEFT:
-                    self.facing == Orientation.DOWN
+                    self.facing = Orientation.DOWN
                 elif self.facing == Orientation.RIGHT:
-                    self.facing == Orientation.UP
+                    self.facing = Orientation.UP
         
         pygame.draw.line(screen, pygame.Color('#0ad100'),
                     (self.center_x, self.center_y),
@@ -142,7 +143,7 @@ class Robot:
             elif self.facing == Orientation.LEFT:
                 self.target_x = self.center_x - 9
         else:
-            self.rotate_right()
+            self.rotate_left()
     
     def set_target_cell(self) -> Cell:
         if self.facing == Orientation.UP:

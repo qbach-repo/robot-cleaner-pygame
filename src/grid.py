@@ -21,6 +21,7 @@ class Cell:
             'left' : None,
             'right': None
         }
+        self.cleanable = False
     
     def draw_current_cell(self,sc):
         x, y = self.x * TILE, self.y * TILE
@@ -29,7 +30,10 @@ class Cell:
     
     def draw(self, sc):
         x, y = self.x * TILE, self.y * TILE
-        if self.visited:
+        if self.cleanable:
+            pygame.draw.rect(sc, pygame.Color('#03856d'),
+                    (x, y, TILE, TILE))
+        elif self.visited:
             pygame.draw.rect(sc, pygame.Color('#1e1e1e'),
                              (x, y, TILE, TILE))
         if self.walls['top']:
@@ -111,7 +115,20 @@ class Grid:
         self.colors = []
         self.color = 40
         self.grid_initialized = False
-
+        self.grid_explore_cleanable = False
+        
+    def bfs(self) -> None:
+        queue = [self.grid_cells[0]]
+        visited = set()
+        visited.add(self.grid_cells[0])
+        while queue:
+            cur = queue.pop(0)
+            for k, cell in cur.neighbors.items():
+                if cell is not None and cell not in visited and cur.walls[k] == False:
+                    queue.append(cell)
+                    cell.cleanable = True
+                    visited.add(cell)
+    
     def draw_grid(self,screen) -> None:
         [cell.draw(screen) for cell in self.grid_cells]
 

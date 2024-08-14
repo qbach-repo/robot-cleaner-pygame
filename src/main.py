@@ -13,6 +13,7 @@ class Game:
     def __init__(self) -> None:
         pygame.init()
         self.screen = pygame.display.set_mode(RES)
+        pygame.display.set_caption('Robot Cleaner')
         self.clock = pygame.time.Clock()
         self.grid = Grid()
         self.robot = Robot(cell=self.grid.grid_cells[0])
@@ -33,6 +34,9 @@ class Game:
             self.grid.draw_grid(screen=self.screen)
             if not self.grid.grid_initialized:
                 self.grid.initialize_grid(screen=self.screen)
+            elif not self.grid.grid_explore_cleanable:
+                self.grid.bfs()
+                self.grid.grid_explore_cleanable = True
             else:
                 self.robot.draw_robot(screen=self.screen)
                 # if not self.robot.rotating_left and not self.robot.rotating_right:
@@ -42,7 +46,7 @@ class Game:
 
             pygame.display.flip()
 
-            self.clock.tick(30)  # limits FPS to 60
+            self.clock.tick(120)  # limits FPS to 60
 
 
 if __name__ == "__main__":
