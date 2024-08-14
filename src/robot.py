@@ -38,6 +38,7 @@ class Robot:
         self.line_thickness = 4
         self.rotated = True
         self.visited = set()
+        self.dfs_policies = []
 
     def draw_robot(self, screen) -> None:
 
@@ -202,4 +203,46 @@ class Robot:
                 self.hitting_wall or 
                 self.reverse or 
                 self.moving_forward)
+    
+    
+class PolicyRobot:
+    
+    def __init__(self,grid_cells: list) -> None:
+        self.grid_cells = grid_cells
+        self.current_cell : Cell = grid_cells[0]
+        self.facing = Orientation.UP
+        self.policies = []
+    
+    def _move_forward(self):
+        self.policies.append('move_foward')
+        if self.facing == Orientation.UP and not self.current_cell.walls['top']:
+            self.current_cell = self.current_cell.neighbors['top']
+        elif self.facing == Orientation.DOWN and not self.current_cell.walls['bottom']:
+            self.current_cell = self.current_cell.neighbors['bottom']
+        elif self.facing == Orientation.LEFT and not self.current_cell.walls['left']:
+            self.current_cell = self.current_cell.neighbors['left']
+        elif self.facing == Orientation.RIGHT and not self.current_cell.walls['right']:
+            self.current_cell = self.current_cell.neighbors['right']
+        else:
+            return
+        
+    def _rotate_left(self):
+        self.policies.append('rotate_left')
+        if self.facing == Orientation.UP:
+            self.facing = Orientation.LEFT
+        elif self.facing == Orientation.DOWN:
+            self.facing = Orientation.RIGHT
+        elif self.facing == Orientation.LEFT:
+            self.facing = Orientation.DOWN
+        elif self.facing == Orientation.RIGHT:
+            self.facing = Orientation.UP
 
+    def _rotate_right(self):
+        if self.facing == Orientation.UP:
+            self.facing = Orientation.RIGHT
+        elif self.facing == Orientation.DOWN:
+            self.facing = Orientation.LEFT
+        elif self.facing == Orientation.LEFT:
+            self.facing = Orientation.UP
+        elif self.facing == Orientation.RIGHT:
+            self.facing = Orientation.DOWN
