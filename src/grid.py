@@ -1,4 +1,5 @@
 import pygame
+import random
 from random import choice
 from src.config import cfg
 
@@ -6,7 +7,7 @@ TILE = cfg.TILE
 ROWS = cfg.ROWS
 COLS = cfg.COLS
 
-
+#random.seed(10)
 
 class Cell:
     def __init__(self, x, y):

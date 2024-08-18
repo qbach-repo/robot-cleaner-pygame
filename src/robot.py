@@ -37,8 +37,16 @@ class Robot:
         self.line_radius = TILE // 2
         self.line_thickness = 4
         self.rotated = True
-        self.visited = set()
         self.dfs_policies = []
+        self.policy_robot : "PolicyRobot" = None
+        self.action = 0
+
+    @property
+    def current_action(self):
+        if len(self.dfs_policies) > 0:
+            return self.dfs_policies[self.action]
+        else:
+            return ""
 
     def draw_robot(self, screen) -> None:
 
@@ -58,7 +66,6 @@ class Robot:
                 self.line_end_x -= 1
             if self.center_x == self.target_cell.center_x and self.center_y == self.target_cell.center_y:
                 self.moving_forward = False
-                self.visited.add(self.occupied_cell)
                 self.occupied_cell = self.target_cell
                 self.occupied_cell.cleanable = False
 
@@ -130,6 +137,19 @@ class Robot:
                     (self.line_end_x, self.line_end_y), self.line_thickness)
     
     def move(self) -> None:
+        if self.action >= len(self.dfs_policies):
+            return
+        else:
+            a = self.dfs_policies[self.action]
+            if a == 'move_forward':
+                self.move_forward()
+            elif a == 'rotate_right':
+                self.rotate_right()
+            elif a == 'rotate_left':
+                self.rotate_left()
+            self.action += 1
+    
+    def move_forward(self) -> None:
         if self.can_move_forward:
             self.moving_forward = True
             self.set_target_cell()
@@ -137,14 +157,18 @@ class Robot:
             self.hitting_wall = True
             if self.facing == Orientation.UP:
                 self.target_y =  self. center_y - 9
+                self.target_x = self.center_x
             elif self.facing == Orientation.DOWN:
                 self.target_y = self.center_y + 9
+                self.target_x = self.center_x
             elif self.facing == Orientation.RIGHT:
                 self.target_x = self.center_x + 9
+                self.target_y = self.center_y
             elif self.facing == Orientation.LEFT:
                 self.target_x = self.center_x - 9
-        else:
-            self.rotate_left()
+                self.target_y = self.center_y
+        # else:
+        #     self.rotate_left()
     
     def set_target_cell(self) -> Cell:
         if self.facing == Orientation.UP:
@@ -159,22 +183,22 @@ class Robot:
     @property
     def can_move_forward(self) -> bool:
         if self.facing == Orientation.UP and not self.occupied_cell.walls['top']:
-            if self.occupied_cell.neighbors['top'] not in self.visited:
+            if self.occupied_cell.neighbors['top']:
                 return True
             else:
                 return False
         elif self.facing == Orientation.DOWN and not self.occupied_cell.walls['bottom']:
-            if self.occupied_cell.neighbors['bottom'] not in self.visited:
+            if self.occupied_cell.neighbors['bottom']:
                 return True
             else:
                 return False
         elif self.facing == Orientation.LEFT and not self.occupied_cell.walls['left']:
-            if self.occupied_cell.neighbors['left'] not in self.visited:
+            if self.occupied_cell.neighbors['left']:
                 return True
             else:
                 return False
         elif self.facing == Orientation.RIGHT and not self.occupied_cell.walls['right']:
-            if self.occupied_cell.neighbors['right'] not in self.visited:
+            if self.occupied_cell.neighbors['right']:
                 return True
             else:
                 return False
@@ -212,19 +236,40 @@ class PolicyRobot:
         self.current_cell : Cell = grid_cells[0]
         self.facing = Orientation.UP
         self.policies = []
+        self.visited = set()
+        self.orientations = {
+            0 : Orientation.UP,
+            1 : Orientation.RIGHT,
+            2 : Orientation.DOWN,
+            3 : Orientation.LEFT
+        }
+    
+    def _get_orientation_digit(self):
+        if self.facing == Orientation.UP:
+            return 0
+        elif self.facing == Orientation.RIGHT:
+            return 1
+        elif self.facing == Orientation.DOWN:
+            return 2
+        elif self.facing == Orientation.LEFT:
+            return 3
     
     def _move_forward(self):
-        self.policies.append('move_foward')
+        self.policies.append('move_forward')
         if self.facing == Orientation.UP and not self.current_cell.walls['top']:
             self.current_cell = self.current_cell.neighbors['top']
+            return True
         elif self.facing == Orientation.DOWN and not self.current_cell.walls['bottom']:
             self.current_cell = self.current_cell.neighbors['bottom']
+            return True
         elif self.facing == Orientation.LEFT and not self.current_cell.walls['left']:
             self.current_cell = self.current_cell.neighbors['left']
+            return True
         elif self.facing == Orientation.RIGHT and not self.current_cell.walls['right']:
             self.current_cell = self.current_cell.neighbors['right']
+            return True
         else:
-            return
+            return False
         
     def _rotate_left(self):
         self.policies.append('rotate_left')
@@ -238,6 +283,7 @@ class PolicyRobot:
             self.facing = Orientation.UP
 
     def _rotate_right(self):
+        self.policies.append('rotate_right')
         if self.facing == Orientation.UP:
             self.facing = Orientation.RIGHT
         elif self.facing == Orientation.DOWN:
@@ -246,3 +292,38 @@ class PolicyRobot:
             self.facing = Orientation.UP
         elif self.facing == Orientation.RIGHT:
             self.facing = Orientation.DOWN
+    
+    @property
+    def _current_state(self):
+        return (self.current_cell, self.facing)
+    
+    def get_next_cell(self, orientation):
+        if orientation == Orientation.UP:
+            return self.current_cell.neighbors['top']
+        elif orientation == Orientation.RIGHT:
+            return self.current_cell.neighbors['right']
+        elif orientation == Orientation.DOWN:
+            return self.current_cell.neighbors['bottom']
+        elif orientation == Orientation.LEFT:
+            return self.current_cell.neighbors['left']
+
+    def _back_track(self):
+        self._rotate_left()
+        self._rotate_left()
+        self._move_forward()
+        self._rotate_left()
+        self._rotate_left()
+
+    def dfs_policy(self) -> list:
+        # print(f"{self.current_cell.x}  {self.current_cell.y} {self.facing}")
+        self.visited.add(self.current_cell)
+        d = self._get_orientation_digit()
+        for k in range(4):
+            new_d = (d + k) % 4
+            next_o = self.orientations[new_d]
+            next_cell = self.get_next_cell(next_o)
+            if next_cell not in self.visited and self._move_forward():
+                self.dfs_policy()
+                self._back_track()
+            
+            self._rotate_right()
