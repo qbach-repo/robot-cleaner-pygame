@@ -1,4 +1,5 @@
 import pygame
+import random
 from random import choice
 from src.config import cfg
 
@@ -6,13 +7,22 @@ TILE = cfg.TILE
 ROWS = cfg.ROWS
 COLS = cfg.COLS
 
-
+#random.seed(10)
 
 class Cell:
     def __init__(self, x, y):
         self.x, self.y = x, y
+        self.center_x = (x * TILE) + (TILE // 2)
+        self.center_y = (y * TILE) + (TILE // 2)
         self.walls = {'top': True, 'right': True, 'bottom': True, 'left': True}
         self.visited = False
+        self.neighbors = {
+            'top' : None,
+            'bottom' : None,
+            'left' : None,
+            'right': None
+        }
+        self.cleanable = False
     
     def draw_current_cell(self,sc):
         x, y = self.x * TILE, self.y * TILE
@@ -21,7 +31,10 @@ class Cell:
     
     def draw(self, sc):
         x, y = self.x * TILE, self.y * TILE
-        if self.visited:
+        if self.cleanable:
+            pygame.draw.rect(sc, pygame.Color('#03856d'),
+                    (x, y, TILE, TILE))
+        elif self.visited:
             pygame.draw.rect(sc, pygame.Color('#1e1e1e'),
                              (x, y, TILE, TILE))
         if self.walls['top']:
@@ -60,6 +73,20 @@ class Cell:
         if left and not left.visited:
             neighbors.append(left)
         return choice(neighbors) if neighbors else False   
+
+    def get_neighbors(self,grid_cells):
+        top = self.check_cell(self.x, self.y - 1,grid_cells)
+        right = self.check_cell(self.x + 1, self.y,grid_cells)
+        bottom = self.check_cell(self.x, self.y + 1,grid_cells)
+        left = self.check_cell(self.x - 1, self.y,grid_cells)
+        if top:
+            self.neighbors['top'] = top
+        if right:
+            self.neighbors['right'] = right
+        if bottom:
+            self.neighbors['bottom'] = bottom
+        if left:
+            self.neighbors['left'] = left
     
     @classmethod
     def remove_walls(cls, current, next):
@@ -82,12 +109,27 @@ class Grid:
 
     def __init__(self) -> None:
         self.grid_cells = [Cell(col, row) for row in range(ROWS) for col in range(COLS)]
+        for cell in self.grid_cells:
+            cell.get_neighbors(grid_cells=self.grid_cells)
         self.current_cell = self.grid_cells[0]
         self.stack = []
         self.colors = []
         self.color = 40
         self.grid_initialized = False
-
+        self.grid_explore_cleanable = False
+        
+    def bfs(self) -> None:
+        queue = [self.grid_cells[0]]
+        visited = set()
+        visited.add(self.grid_cells[0])
+        while queue:
+            cur = queue.pop(0)
+            for k, cell in cur.neighbors.items():
+                if cell is not None and cell not in visited and cur.walls[k] == False:
+                    queue.append(cell)
+                    cell.cleanable = True
+                    visited.add(cell)
+    
     def draw_grid(self,screen) -> None:
         [cell.draw(screen) for cell in self.grid_cells]
 
